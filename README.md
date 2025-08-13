@@ -3,6 +3,7 @@
 [OpenAI が公開した gpt-oss](https://openai.com/ja-JP/index/introducing-gpt-oss/) を Apple Silicon 搭載の Mac では GPU（Metal）を Enable にした llama.cpp で動作させます。
 
 OpenAI によると「gpt-oss-20b モデルは、一般的なベンチマークで OpenAI o3‑mini と同様の結果を出し、わずか16 GBのメモリを搭載したエッジデバイスで実行できる」とのことです。
+また、 [gpt-oss の知識は 2024年6月](https://cdn.openai.com/pdf/419b6906-9da6-406c-a19d-1bb078ac7637/oai_gpt-oss_model_card.pdf?utm_source=chatgpt.com)だと記載を見つけることができます。
 
 
 ## 1. llama.cpp のビルドとセットアップ　（Metal 対応)

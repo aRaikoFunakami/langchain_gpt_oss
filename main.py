@@ -7,7 +7,6 @@ import re
 from dotenv import load_dotenv
 from langchain_openai import ChatOpenAI
 from langchain_core.messages import SystemMessage
-from langchain_core.messages import trim_messages
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_core.runnables.history import RunnableWithMessageHistory
 from langchain_core.chat_history import InMemoryChatMessageHistory
@@ -59,20 +58,8 @@ def build_chain(base_url: str, model: str, api_key: str = "dummy-key"):
     prompt = ChatPromptTemplate.from_messages(
         [system, MessagesPlaceholder("history"), ("human", "{input}")]
     )
-    # Trim long histories to stay within the model context window
-    trimmer = trim_messages(
-        # Keep the most recent messages
-        strategy="last",
-        # Use the same model for accurate token counting
-        token_counter=llm,
-        # Adjust this to your server/model context. Start conservative.
-        max_tokens=3000,
-        # Preserve system then human/tool validity
-        start_on="human",
-        end_on=("human", "tool"),
-        include_system=True,
-    )
-    chain = prompt | trimmer | llm
+
+    chain = prompt | llm
     return chain
 
 def main():
