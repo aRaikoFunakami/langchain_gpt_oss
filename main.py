@@ -7,24 +7,33 @@ import re
 from dotenv import load_dotenv
 from langchain_openai import ChatOpenAI
 from langchain_core.messages import SystemMessage
+from langchain_core.messages import trim_messages
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_core.runnables.history import RunnableWithMessageHistory
 from langchain_core.chat_history import InMemoryChatMessageHistory
 
 
 def extract_final_with_harmony(raw_text: str) -> str:
-    """Parse Harmony tokens and return only the assistant final message.
-    Falls back to regex if tokens are already combined in a single string.
+    """Extract only the assistant's `final` channel from Harmony-formatted text.
+    If no `final` message exists, avoid exposing `analysis` and return a brief notice.
+    This function is robust to multiple assistant messages and stray markers.
     """
-    # Fast path: if tags are present, take final channel content.
-    if "<|channel|>final<|message|>" in raw_text:
-        # Keep last final message chunk; strip trailing end marker if present.
-        part = raw_text.split("<|channel|>final<|message|>")[-1]
-        # Remove potential closing markers.
-        part = re.split(r"<\|end\|>|<\|start\|>", part)[0].strip()
-        return part
+    if not isinstance(raw_text, str) or not raw_text:
+        return ""
 
-    # If server gave us already-clean text, just return it.
+    # Fast path: exact final marker present
+    if "<|channel|>final<|message|>" in raw_text:
+        # Keep last final occurrence and strip any trailing markers
+        segment = raw_text.split("<|channel|>final<|message|>")[-1]
+        # Split on any Harmony boundaries that may follow the final content
+        segment = re.split(r"<\|end\|>|<\|start\|>|<\|call\|>|<\|return\|>", segment)[0]
+        return segment.strip()
+
+    # If Harmony tags are present but no final, do not surface analysis/commentary
+    if "<|channel|>analysis<|message|>" in raw_text or "<|channel|>commentary<|message|>" in raw_text:
+        return "(モデルが final チャンネルを返しませんでした。もう一度お試しください。)"
+
+    # Otherwise return as-is (non-Harmony plain text response)
     return raw_text
 
 def build_chain(base_url: str, model: str, api_key: str = "dummy-key"):
@@ -38,16 +47,32 @@ def build_chain(base_url: str, model: str, api_key: str = "dummy-key"):
 
     system = SystemMessage(
         content=(
-            "You are a helpful assistant.\n"
-            "Respond in Japanese unless asked otherwise.\n"
-            "Do not reveal chain-of-thought; provide only final answers."
+            "You are ChatGPT, a large language model trained by OpenAI.\n"
+            "Knowledge cutoff: 2024-06\n"
+            "Current date: 2025-08-13\n\n"
+            "Reasoning: medium\n\n"
+            "# Valid channels: analysis, commentary, final. Channel must be included for every message.\n"
+            "Only return a single assistant message on the final channel. Do NOT output analysis.\n"
         )
     )
 
     prompt = ChatPromptTemplate.from_messages(
         [system, MessagesPlaceholder("history"), ("human", "{input}")]
     )
-    chain = prompt | llm
+    # Trim long histories to stay within the model context window
+    trimmer = trim_messages(
+        # Keep the most recent messages
+        strategy="last",
+        # Use the same model for accurate token counting
+        token_counter=llm,
+        # Adjust this to your server/model context. Start conservative.
+        max_tokens=3000,
+        # Preserve system then human/tool validity
+        start_on="human",
+        end_on=("human", "tool"),
+        include_system=True,
+    )
+    chain = prompt | trimmer | llm
     return chain
 
 def main():
@@ -71,8 +96,9 @@ def main():
             break
 
         resp = with_history.invoke({"input": user}, config={"configurable": {"session_id": "cli"}})
-        # Ensure only final channel is printed
-        print("Assistant:", extract_final_with_harmony(resp.content))
+        # Ensure only final channel is printed, robust to non-str content
+        out = resp.content if isinstance(resp.content, str) else str(resp.content)
+        print("Assistant:", extract_final_with_harmony(out))
 
 if __name__ == "__main__":
     main()

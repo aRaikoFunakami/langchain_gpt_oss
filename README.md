@@ -1,6 +1,8 @@
 ## はじめに
 
-OpenAI が公開した gpt-oss を Apple Silicon 搭載の Mac では GPU（Metal）を Enable にした llama.cpp で動作させる
+[OpenAI が公開した gpt-oss](https://openai.com/ja-JP/index/introducing-gpt-oss/) を Apple Silicon 搭載の Mac では GPU（Metal）を Enable にした llama.cpp で動作させます。
+
+OpenAI によると「gpt-oss-20b モデルは、一般的なベンチマークで OpenAI o3‑mini と同様の結果を出し、わずか16 GBのメモリを搭載したエッジデバイスで実行できる」とのことです。
 
 
 ## 1. llama.cpp のビルドとセットアップ　（Metal 対応)
@@ -108,6 +110,66 @@ print("Hello World")
 
 ```bash
 git clone https://github.com/aRaikoFunakami/langchain_gpt_oss.git
+cd langchain_gpt_oss
 uv sync
 uv run python main.py
+```
+
+コマンドラインが立ち上がります
+
+```bash
+Chat started. Type 'exit' to quit.
+You: 
+```
+
+### サンプル出力1
+
+```bash
+You: こんにちは
+Assistant: こんにちは！どんなお手伝いが必要ですか？
+```
+
+実行時間 (サーバー側のログ) 
+
+```bash
+prompt eval time =     285.82 ms /    40 tokens (    7.15 ms per token,   139.95 tokens per second)
+       eval time =    2239.42 ms /    94 tokens (   23.82 ms per token,    41.98 tokens per second)
+      total time =    2525.24 ms /   134 tokens
+```
+
+
+### サンプル出力2
+
+```bash
+You: スターウォーズの監督を教えて
+Assistant: スターウォーズシリーズの主要な監督は以下の通りです（公開順・主要作品別にまとめました）。
+
+| 作品 | 公開年 | 監督 |
+|------|--------|------|
+| **『スター・ウォーズ エピソード4/新たなる希望』** | 1977 | ジョージ・ルーカス |
+| **『スター・ウォーズ エピソード5/帝国の逆襲』** | 1980 | リチャード・マーロウ |
+| **『スター・ウォーズ エピソード6/ジェダイの帰還』** | 1983 | リチャード・マーロウ |
+| **『スター・ウォーズ エピソード1/ファントム・メナス』** | 1999 | ジョージ・ルーカス |
+| **『スター・ウォーズ エピソード2/クローンの攻撃』** | 2002 | ジョージ・ルーカス |
+| **『スター・ウォーズ エピソード3/シスの復讐』** | 2005 | ジョージ・ルーカス |
+| **『スター・ウォーズ エピソード7/フォースの覚醒』** | 2015 | J.J. アブラムズ |
+| **『スター・ウォーズ エピソード8/最後のジェダイ』** | 2017 | Rian Johnson |
+| **『スター・ウォーズ エピソード9/スカイウォーカーの夜明け』** | 2019 | ジョージ・ルーカス（監督はリード・レイザーが制作に関わるが、公式に監督はジョージ・ルーカス） |
+| **『レイ・オブ・ハッピー』**（スピンオフ） | 2018 | レイ・オブ・ハッピー |  
+| **『フォースの暗闇』**（スピンオフ） | 2018 | ジョン・ファブレック |
+
+> **注**  
+> - 公式に「監督」と認定されるのは上記表の通りです。  
+> - ストーリーラインや制作背景に関わる他の重要人物（プロデューサー、脚本家など）は別途多く存在します。  
+
+もし「スターウォーズの監督」を特定の映画（例：オリジナル三部作）に絞って知りたい場合は、その作品名を教えていただければさらに詳しく回答します。
+```
+
+
+実行時間 (サーバー側のログ) 
+
+```bash
+prompt eval time =    3099.14 ms /  1360 tokens (    2.28 ms per token,   438.83 tokens per second)
+       eval time =   20143.76 ms /   651 tokens (   30.94 ms per token,    32.32 tokens per second)
+      total time =   23242.90 ms /  2011 tokens
 ```
